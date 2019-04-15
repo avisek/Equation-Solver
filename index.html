@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+
+		<meta charset="utf-8" />
+		<title>x, y, z finder</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+
+		<link rel="stylesheet" href="https://avisek.github.io/booter/booter.css" />
+
+		<style>
+.container {
+	max-width: 780px;
+}
+		</style>
+
+		<script>
+(function() {
+
+	// Error Tracking
+	window.onerror = function(errorMsg, url, lineNumber) {
+		alert("JavaScript Error!\n\nMassage: " + errorMsg + "\nURL: " + url + "\nLine: " + lineNumber + "\n");
+	};
+
+})();
+		</script>
+
+	</head>
+
+	<body>
+
+		<div class="container">
+			<section class="m-2">
+				<h4 class="mt-lg-5 mt-3">Equation Solver</h4>
+				<hr />
+				<div class="row">
+					<div class="col-4">
+						<div class="form-group row">
+							<label for="min" class="col-3 col-form-label text-right">Min</label>
+							<div class="col-9">
+								<input type="text" class="form-control" id="min" value="-5" placeholder="-Infinity" spellcheck="false" autocorrect="off" autocapitalize="off" />
+							</div>
+						</div>
+					</div>
+					<div class="col-4">
+						<div class="form-group row">
+							<label for="max" class="col-3 col-form-label text-right">Max</label>
+							<div class="col-9">
+								<input type="text" class="form-control" id="max" value="5" placeholder="Infinity" spellcheck="false" autocorrect="off" autocapitalize="off" />
+							</div>
+						</div>
+					</div>
+					<div class="col-4">
+						<div class="form-group row">
+							<label for="expected-a" class="col-3 col-form-label text-right">a</label>
+							<div class="col-9">
+								<input type="text" class="form-control" id="expected-a" value="45" placeholder="45" spellcheck="false" autocorrect="off" autocapitalize="off" />
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="custom-control custom-checkbox">
+					<input type="checkbox" class="custom-control-input" id="express-mode" />
+					<label class="custom-control-label mb-3" for="express-mode">Express Mode (Every combination won&apos;t be shown in real-time but they&apos;ll freely process in background)</label>
+				</div>
+				<div class="mx-auto mb-3" style="width: 80%; padding-right: 8.333333%;">
+					<table style="table-layout: fixed; width: 100%; font-size: 1.5rem;">
+						<tbody>
+							<tr class="text-muted">
+								<td class="text-center"></td>
+								<td class="text-right"><var>x</var></td>
+								<td class="text-left"><sup>3</sup></td>
+								<td class="text-center">+</td>
+								<td class="text-right"><var>y</var></td>
+								<td class="text-left"><sup>3</sup></td>
+								<td class="text-center">+</td>
+								<td class="text-right"><var>z</var></td>
+								<td class="text-left"><sup>3</sup></td>
+								<td class="text-right">=</td>
+								<td class="text-right"></td>
+								<td class="text-right"><var>a</var></td>
+							</tr>
+							<tr id="equation-wrapper" class="d-none">
+								<td class="text-center"><span id="x-sign"></span></td>
+								<td class="text-right"><span id="x"><var>x</var></span></td>
+								<td class="text-left"><sup>3</sup></td>
+								<td class="text-center"><span id="y-sign">+</span></td>
+								<td class="text-right"><span id="y"><var>y</var></span></td>
+								<td class="text-left"><sup>3</sup></td>
+								<td class="text-center"><span id="z-sign">+</span></td>
+								<td class="text-right"><span id="z"><var>z</var></span></td>
+								<td class="text-left"><sup>3</sup></td>
+								<td class="text-right">=</td>
+								<td class="text-right"><span id="a-sign"></span></td>
+								<td class="text-right"><span id="a"><var>a</var></span></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div class="row mb-3">
+					<div id="stop-wrapper" class="col d-none">
+						<button type="button" class="btn btn-block btn-danger" id="stop">Stop</button>
+					</div>
+					<div class="col">
+						<button type="button" class="btn btn-block btn-primary" id="start">Start</button>
+					</div>
+				</div>
+				<p id="tip" style="white-space: pre;">Enter <label for="min"><a tabindex="0">Min</a></label>, <label for="max"><a tabindex="0">Max</a></label>, <label for="expected-a"><a tabindex="0">a</a></label> and hit <label for="start"><a tabindex="0">Start</a></label>.</p>
+				<div id="solutions-section" class="mb-3 d-none">
+					<h5>Solutions</h5>
+					<div class="table-responsive">
+						<table id="solutions-table" class="table table-striped border mb-0 w-auto" style="table-layout: fixed; min-width: 100%;"></table>
+					</div>
+			</section>
+		</div>
+
+		<footer>
+			<div class="container my-3">
+				<p class="text-center text-muted border-top"><small>Made by <a href="https://github.com/avisek" target="_blank">Avi</a></small></p>
+			</div>
+		</footer>
+
+		<script>
+
+var minInput = document.getElementById('min');
+var maxInput = document.getElementById('max');
+var expectedAInput = document.getElementById('expected-a');
+var xEl = document.getElementById('x');
+var yEl = document.getElementById('y');
+var zEl = document.getElementById('z');
+var aEl = document.getElementById('a');
+var xSignEl = document.getElementById('x-sign');
+var ySignEl = document.getElementById('y-sign');
+var zSignEl = document.getElementById('z-sign');
+var aSignEl = document.getElementById('a-sign');
+var startBtn = document.getElementById('start');
+var stopBtn = document.getElementById('stop');
+var stopBtnWrapper = document.getElementById('stop-wrapper');
+var equationWrapper = document.getElementById('equation-wrapper');
+var expressModeEl = document.getElementById('express-mode');
+var tipEl = document.getElementById('tip');
+var solSectionEl = document.getElementById('solutions-section');
+var solTableEl = document.getElementById('solutions-table');
+var running = false;
+var finished = false;
+var min = -Infinity;
+var max = Infinity;
+var expectedA = 66;
+var x = 0;
+var y = 0;
+var z = 0;
+var b = 0; // current boundary
+var c = 0; // combinations count
+var oldC = 0;
+var solutions = [];
+var displayUpdateInterval = 1000;
+var expressMode = false;
+var oldTime;
+var oldTime2;
+var speed; // combinations per second
+var speedUpdateInterval = 1000;
+
+startBtn.addEventListener('click', function() {
+	if (!running) {
+		if (finished) {
+			reset();
+			finished = false;
+		} else {
+			resume();
+		}
+	} else {
+		pause();
+	}
+});
+
+stopBtn.addEventListener('click', function() {
+	reset();
+});
+
+expressModeEl.addEventListener('change', function() {
+	expressMode = expressModeEl.checked;
+	speed = 0;
+});
+
+function formatInt(value, defaultValue) {
+	var n = parseInt(value);
+	defaultValue = typeof defaultValue === 'number' ? defaultValue : 0;
+	return (isNaN(n) || (!isFinite(defaultValue) && value.trim().toLowerCase() === defaultValue.toString().toLowerCase())) ? defaultValue : n;
+}
+
+function tip(text) {
+	tipEl.textContent = text;
+}
+
+function resume() {
+	if (!running) {
+		startBtn.textContent = 'Pause';
+		startBtn.classList.remove('btn-primary');
+		startBtn.classList.remove('btn-success');
+		startBtn.classList.add('btn-warning');
+		stopBtnWrapper.classList.add('d-none');
+		equationWrapper.classList.remove('d-none');
+		min = formatInt(minInput.value, -Infinity);
+		max = formatInt(maxInput.value, Infinity);
+		expectedA = formatInt(expectedAInput.value);
+		minInput.disabled = true;
+		maxInput.disabled = true;
+		expectedAInput.disabled = true;
+		minInput.value = min;
+		maxInput.value = max;
+		expectedAInput.value = expectedA;
+		running = true;
+		tip('Running...');
+		oldTime = Date.now();
+		oldTime2 = oldTime;
+		speed = 0;
+		step();
+	}
+}
+
+function pause() {
+	if (running) {
+		startBtn.textContent = 'Resume';
+		startBtn.classList.remove('btn-warning');
+		startBtn.classList.add('btn-success');
+		stopBtnWrapper.classList.remove('d-none');
+		startBtn.blur();
+		tip('Paused.\nCombinations made: ' + c);
+		running = false;
+	}
+}
+
+function reset() {
+	if (!running) {
+		startBtn.textContent = 'Start';
+		startBtn.classList.remove('btn-success');
+		startBtn.classList.remove('btn-secondary');
+		startBtn.classList.add('btn-primary');
+		stopBtnWrapper.classList.add('d-none');
+		equationWrapper.classList.add('d-none');
+		solSectionEl.classList.add('d-none');
+		minInput.disabled = false;
+		maxInput.disabled = false;
+		expectedAInput.disabled = false;
+		while (solTableEl.rows.length) {
+			solTableEl.deleteRow(0);
+		}
+		x = 0;
+		y = 0;
+		z = 0;
+		b = 0;
+		c = 0;
+		tip('Wanna start again? ;-)');
+		running = false;
+		solutions = [];
+	}
+}
+
+function step() {
+	if (!running) return;
+	if (calculateA() === expectedA) {
+		if (solutions.indexOf(String(x) + ',' + String(y) + ',' + String(z)) === -1 &&
+		    solutions.indexOf(String(x) + ',' + String(z) + ',' + String(y)) === -1 &&
+		    solutions.indexOf(String(y) + ',' + String(x) + ',' + String(z)) === -1 &&
+		    solutions.indexOf(String(y) + ',' + String(z) + ',' + String(x)) === -1 &&
+		    solutions.indexOf(String(z) + ',' + String(x) + ',' + String(y)) === -1 &&
+		    solutions.indexOf(String(z) + ',' + String(y) + ',' + String(x)) === -1) {
+			addSolution(x, y, z);
+		} else {
+			c--;
+		}
+	}
+	if (z !== Math.max(-b, min)) {
+		if (Math.sign(z) !== -1) {
+			if (z === Math.min(b, max)) {
+				z = -1;
+			} else {
+				z++;
+			}
+		} else {
+			z--;
+		}
+	} else {
+		z = 0;
+		if (y !== Math.max(-b, min)) {
+			if (Math.sign(y) !== -1) {
+				if (y === Math.min(b, max)) {
+					y = -1;
+				} else {
+					y++;
+				}
+			} else {
+				y--;
+			}
+		} else {
+			y = 0;
+			if (x !== Math.max(-b, min)) {
+				if (Math.sign(x) !== -1) {
+					if (x === Math.min(b, max)) {
+						x = -1;
+					} else {
+						x++;
+					}
+				} else {
+					x--;
+				}
+			} else {
+				x = 0;
+				if (Math.max(Math.abs(min), max) > b) {
+					b++;
+				} else {
+					return finish();
+				}
+			}
+		}
+	}
+	c++;
+	var newTime = Date.now();
+	var elapsedTime = newTime - oldTime;
+	var newTime2 = Date.now();
+	var elapsedTime2 = newTime2 - oldTime2;
+	if (elapsedTime2 > speedUpdateInterval) {
+		speed = (c - oldC) / elapsedTime2 * speedUpdateInterval;
+		oldC = c;
+		oldTime2 = newTime2 - (elapsedTime2 % speedUpdateInterval);
+	}
+	var instantCall = expressMode && elapsedTime < displayUpdateInterval;
+	if (instantCall) {
+		try {
+			step();
+		} catch (exception) {
+			instantCall = false;
+		}
+	}
+	if (!instantCall) {
+		updateDisplay();
+		tip('Running...\nCombinations made: ' + c + ((speed > 0) ? '\nCombinations per second: ' + Math.round(speed) : ''));
+		oldTime = newTime - (elapsedTime % displayUpdateInterval);
+		if (expressMode) {
+			setTimeout(step, 1);
+		} else {
+			setTimeout(step, 1e3 / 60);
+		}
+	}
+}
+
+function calculateA() {
+	return Math.pow(x, 3) + Math.pow(y, 3) + Math.pow(z, 3);
+}
+
+function finish() {
+	if (running) {
+		if (solutions.length) {
+			startBtn.textContent = 'Done';
+			startBtn.classList.remove('btn-warning');
+			startBtn.classList.add('btn-success');
+			tip(solutions.length + ' solution' + (solutions.length > 1 ? 's' : '') + '!!!\nCombinations made: ' + c);
+		} else {
+			startBtn.textContent = 'Done';
+			startBtn.classList.remove('btn-warning');
+			startBtn.classList.add('btn-secondary');
+			tip('No solution :-(\nCombinations made: ' + c);
+		}
+		updateDisplay();
+		equationWrapper.classList.add('d-none');
+		running = false;
+		finished = true;
+	}
+}
+
+function updateDisplay() {
+	var a = calculateA();
+	xEl.textContent = Math.abs(x);
+	xSignEl.textContent = Math.sign(x) === -1 ? '-' : '';
+	yEl.textContent = Math.abs(y);
+	ySignEl.textContent = Math.sign(y) === -1 ? '-' : '+';
+	zEl.textContent = Math.abs(z);
+	zSignEl.textContent = Math.sign(z) === -1 ? '-' : '+';
+	aEl.textContent = Math.abs(a);
+	aSignEl.textContent = Math.sign(x) === -1 ? '-' : '';
+}
+
+function addSolution(x, y, z) {
+	solutions.push(String(x) + ',' + String(y) + ',' + String(z));
+	solSectionEl.classList.remove('d-none');
+	var fragment = document.createDocumentFragment();
+	var cells = [];
+	cells[0] = document.createElement('td');
+	cells[0].className = 'text-right text-muted px-2 border-right';
+	cells[0].textContent = solutions.length + '.';
+	cells[1] = document.createElement('td');
+	cells[1].className = 'text-center pr-1 pl-2';
+	cells[1].textContent = Math.sign(x) === -1 ? '-' : '';
+	cells[2] = document.createElement('td');
+	cells[2].className = 'text-right pr-0 pl-1';
+	cells[2].textContent = Math.abs(x);
+	cells[3] = document.createElement('td');
+	cells[3].className = 'text-left pr-1 pl-0';
+	cells[3].appendChild(document.createElement('sup').appendChild(document.createTextNode('3')).parentNode);
+	cells[4] = document.createElement('td');
+	cells[4].className = 'text-center px-1';
+	cells[4].textContent = Math.sign(y) === -1 ? '-' : '+';
+	cells[5] = document.createElement('td');
+	cells[5].className = 'text-right pr-0 pl-1';
+	cells[5].textContent = Math.abs(y);
+	cells[6] = document.createElement('td');
+	cells[6].className = 'text-left pr-1 pl-0';
+	cells[6].appendChild(document.createElement('sup').appendChild(document.createTextNode('3')).parentNode);
+	cells[7] = document.createElement('td');
+	cells[7].className = 'text-center px-1';
+	cells[7].textContent = Math.sign(z) === -1 ? '-' : '+';
+	cells[8] = document.createElement('td');
+	cells[8].className = 'text-right pr-0 pl-1';
+	cells[8].textContent = Math.abs(z);
+	cells[9] = document.createElement('td');
+	cells[9].className = 'text-left pr-1 pl-0';
+	cells[9].appendChild(document.createElement('sup').appendChild(document.createTextNode('3')).parentNode);
+	cells[10] = document.createElement('td');
+	cells[10].className = 'text-right px-1';
+	cells[10].textContent = '=';
+	cells[11] = document.createElement('td');
+	cells[11].className = 'text-right px-1';
+	cells[11].textContent = Math.sign(expectedA) === -1 ? '-' : '';
+	cells[12] = document.createElement('td');
+	cells[12].className = 'text-right pr-2 pl-1';
+	cells[12].textContent = Math.abs(expectedA);
+	cells.forEach(function(cell) {
+		fragment.appendChild(cell);
+	});
+	solTableEl.insertRow().appendChild(fragment);
+}
+
+function setFromQueryParams() {
+	var location = window.location;
+	var params = {};
+	var query = location.search.substring(1);
+	if (query) {
+		var vars = query.split("&");
+		for (var i = 0; i < vars.length; i++) {
+			var pair = vars[i].split("=");
+			params[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]);
+		}
+	}
+	typeof params.min !== "undefined" && (minInput.value = params.min);
+	typeof params.max !== "undefined" && (maxInput.value = params.min);
+	typeof params.a !== "undefined" && (expectedAInput.value = params.a);
+	typeof params.expressMode !== "undefined" && (expressModeEl.checked = params.expressMode === "true");
+}
+
+setFromQueryParams();
+
+		</script>
+
+	</body>
+
+</html>
