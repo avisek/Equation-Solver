@@ -445,7 +445,7 @@ function setFromQueryParams() {
 	typeof params.min !== "undefined" && (minInput.value = params.min);
 	typeof params.max !== "undefined" && (maxInput.value = params.min);
 	typeof params.a !== "undefined" && (expectedAInput.value = params.a);
-	typeof params.expressMode !== "undefined" && (expressModeEl.checked = params.expressMode === "true");
+	typeof params.expressMode !== "undefined" && (expressModeEl.checked = expressMode = params.expressMode === "true");
 }
 
 setFromQueryParams();
