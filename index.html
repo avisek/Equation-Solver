@@ -68,28 +68,26 @@
 					<table style="table-layout: fixed; width: 100%; font-size: 1.5rem;">
 						<tbody>
 							<tr class="text-muted">
-								<td class="text-center"></td>
-								<td class="text-right"><var>x</var></td>
+								<td class="text-right"><span class="invisible">(</span><var>x</var><span class="invisible">)</span></td>
 								<td class="text-left"><sup>3</sup></td>
 								<td class="text-center">+</td>
-								<td class="text-right"><var>y</var></td>
+								<td class="text-right"><span class="invisible">(</span><var>y</var><span class="invisible">)</span></td>
 								<td class="text-left"><sup>3</sup></td>
 								<td class="text-center">+</td>
-								<td class="text-right"><var>z</var></td>
+								<td class="text-right"><span class="invisible">(</span><var>z</var><span class="invisible">)</span></td>
 								<td class="text-left"><sup>3</sup></td>
 								<td class="text-right">=</td>
 								<td class="text-right"></td>
 								<td class="text-right"><var>a</var></td>
 							</tr>
 							<tr id="equation-wrapper" class="d-none">
-								<td class="text-center"><span id="x-sign"></span></td>
-								<td class="text-right"><span id="x"><var>x</var></span></td>
+								<td class="text-right"><span id="bx-1" class="text-muted">(</span><span id="x"><var>x</var></span><span id="bx-2" class="text-muted">)</span></td>
 								<td class="text-left"><sup>3</sup></td>
 								<td class="text-center"><span id="y-sign">+</span></td>
-								<td class="text-right"><span id="y"><var>y</var></span></td>
+								<td class="text-right"><span id="by-1" class="text-muted">(</span><span id="y"><var>y</var></span><span id="by-2" class="text-muted">)</span></td>
 								<td class="text-left"><sup>3</sup></td>
 								<td class="text-center"><span id="z-sign">+</span></td>
-								<td class="text-right"><span id="z"><var>z</var></span></td>
+								<td class="text-right"><span id="bz-1" class="text-muted">(</span><span id="z"><var>z</var></span><span id="bz-2" class="text-muted">)</span></td>
 								<td class="text-left"><sup>3</sup></td>
 								<td class="text-right">=</td>
 								<td class="text-right"><span id="a-sign"></span></td>
@@ -130,10 +128,12 @@ var xEl = document.getElementById('x');
 var yEl = document.getElementById('y');
 var zEl = document.getElementById('z');
 var aEl = document.getElementById('a');
-var xSignEl = document.getElementById('x-sign');
-var ySignEl = document.getElementById('y-sign');
-var zSignEl = document.getElementById('z-sign');
-var aSignEl = document.getElementById('a-sign');
+var bx1 = document.getElementById('bx-1');
+var bx2 = document.getElementById('bx-2');
+var by1 = document.getElementById('by-1');
+var by2 = document.getElementById('by-2');
+var bz1 = document.getElementById('bz-1');
+var bz2 = document.getElementById('bz-2');
 var startBtn = document.getElementById('start');
 var stopBtn = document.getElementById('stop');
 var stopBtnWrapper = document.getElementById('stop-wrapper');
@@ -142,40 +142,45 @@ var expressModeEl = document.getElementById('express-mode');
 var tipEl = document.getElementById('tip');
 var solSectionEl = document.getElementById('solutions-section');
 var solTableEl = document.getElementById('solutions-table');
+var started = false;
 var running = false;
 var finished = false;
 var min = -Infinity;
 var max = Infinity;
-var expectedA = 66;
+var minInf =  true;
+var maxInf =  true;
+var expectedA = 45;
 var x = 0;
 var y = 0;
 var z = 0;
+var d = 0; // direction
 var b = 0; // current boundary
 var c = 0; // combinations count
-var oldC = 0;
+var oldC = c;
 var solutions = [];
 var displayUpdateInterval = 1000;
 var expressMode = false;
 var oldTime;
 var oldTime2;
-var speed; // combinations per second
+var speed = 0; // combinations per second
 var speedUpdateInterval = 1000;
 
 startBtn.addEventListener('click', function() {
-	if (!running) {
+	if (running) {
+		pause();
+	} else {
 		if (finished) {
 			reset();
-			finished = false;
-		} else {
+		} else if (started) {
 			resume();
+		} else {
+			start();
 		}
-	} else {
-		pause();
 	}
 });
 
 stopBtn.addEventListener('click', function() {
-	reset();
+	stop();
 });
 
 expressModeEl.addEventListener('change', function() {
@@ -193,6 +198,36 @@ function tip(text) {
 	tipEl.textContent = text;
 }
 
+function start() {
+	if (!running) {
+		var min0 = formatInt(minInput.value, -Infinity);
+		var max0 = formatInt(maxInput.value, Infinity);
+		min = Math.min(min0, max0);
+		max = Math.max(min0, max0);
+		expectedA = formatInt(expectedAInput.value, 45);
+		minInput.disabled = true;
+		maxInput.disabled = true;
+		expectedAInput.disabled = true;
+		minInput.value = min;
+		maxInput.value = max;
+		expectedAInput.value = expectedA;
+		equationWrapper.classList.remove('d-none');
+		minInf = !isFinite(min);
+		maxInf = !isFinite(max);
+		d = 0;
+		if (!maxInf) {
+			d = -1;
+			x = y = z = max;
+		}
+		if (!minInf) {
+			d = 1;
+			x = y = z = min;
+		}
+		started = true;
+		resume();
+	}
+}
+
 function resume() {
 	if (!running) {
 		startBtn.textContent = 'Pause';
@@ -200,21 +235,10 @@ function resume() {
 		startBtn.classList.remove('btn-success');
 		startBtn.classList.add('btn-warning');
 		stopBtnWrapper.classList.add('d-none');
-		equationWrapper.classList.remove('d-none');
-		min = formatInt(minInput.value, -Infinity);
-		max = formatInt(maxInput.value, Infinity);
-		expectedA = formatInt(expectedAInput.value);
-		minInput.disabled = true;
-		maxInput.disabled = true;
-		expectedAInput.disabled = true;
-		minInput.value = min;
-		maxInput.value = max;
-		expectedAInput.value = expectedA;
 		running = true;
 		tip('Running...');
 		oldTime = Date.now();
 		oldTime2 = oldTime;
-		speed = 0;
 		step();
 	}
 }
@@ -225,10 +249,15 @@ function pause() {
 		startBtn.classList.remove('btn-warning');
 		startBtn.classList.add('btn-success');
 		stopBtnWrapper.classList.remove('d-none');
-		startBtn.blur();
-		tip('Paused.\nCombinations made: ' + c);
 		running = false;
+		speed = 0;
+		tip('Paused.\nCombinations made: ' + c);
 	}
+}
+
+function stop() {
+	if (running) pause();
+	reset();
 }
 
 function reset() {
@@ -249,16 +278,22 @@ function reset() {
 		x = 0;
 		y = 0;
 		z = 0;
+		d = 0;
 		b = 0;
 		c = 0;
-		tip('Wanna start again? ;-)');
-		running = false;
+		oldC = c;
 		solutions = [];
+		speed = 0;
+		started = false;
+		running = false;
+		finished = false;
+		tip('Wanna start again? ;-)');
 	}
 }
 
 function step() {
 	if (!running) return;
+	c++;
 	if (calculateA() === expectedA) {
 		if (solutions.indexOf(String(x) + ',' + String(y) + ',' + String(z)) === -1 &&
 		    solutions.indexOf(String(x) + ',' + String(z) + ',' + String(y)) === -1 &&
@@ -268,54 +303,54 @@ function step() {
 		    solutions.indexOf(String(z) + ',' + String(y) + ',' + String(x)) === -1) {
 			addSolution(x, y, z);
 		} else {
-			c--;
+			// c--;
+			// console.log(x, y, z);
 		}
 	}
-	if (z !== Math.max(-b, min)) {
-		if (Math.sign(z) !== -1) {
-			if (z === Math.min(b, max)) {
-				z = -1;
-			} else {
-				z++;
-			}
+	if (z !== (d === 0 ? -b : maxInf ? min + b : minInf ? max - b : max)) {
+		if (d !== 0) {
+			z += d;
 		} else {
-			z--;
+			if (z <= 0) {
+				z = 1 - z;
+			} else {
+				z *= -1;
+			}
 		}
 	} else {
-		z = 0;
-		if (y !== Math.max(-b, min)) {
-			if (Math.sign(y) !== -1) {
-				if (y === Math.min(b, max)) {
-					y = -1;
-				} else {
-					y++;
-				}
+		z = d === 1 ? min : d === -1 ? max : 0;
+		if (y !== (d === 0 ? -b : maxInf ? min + b : minInf ? max - b : max)) {
+			if (d !== 0) {
+				y += d;
 			} else {
-				y--;
+				if (y <= 0) {
+					y = 1 - y;
+				} else {
+					y *= -1;
+				}
 			}
 		} else {
-			y = 0;
-			if (x !== Math.max(-b, min)) {
-				if (Math.sign(x) !== -1) {
-					if (x === Math.min(b, max)) {
-						x = -1;
-					} else {
-						x++;
-					}
+			y = d === 1 ? min : d === -1 ? max : 0;
+			if (x !== (d === 0 ? -b : maxInf ? min + b : minInf ? max - b : max)) {
+				if (d !== 0) {
+					x += d;
 				} else {
-					x--;
+					if (x <= 0) {
+						x = 1 - x;
+					} else {
+						x *= -1;
+					}
 				}
 			} else {
-				x = 0;
-				if (Math.max(Math.abs(min), max) > b) {
+				if (d === 1 ? (x !== max) : d === -1 ? (x !== min) : true) {
 					b++;
 				} else {
 					return finish();
 				}
+				x = d === 1 ? min : d === -1 ? max : 0;
 			}
 		}
 	}
-	c++;
 	var newTime = Date.now();
 	var elapsedTime = newTime - oldTime;
 	var newTime2 = Date.now();
@@ -371,14 +406,13 @@ function finish() {
 
 function updateDisplay() {
 	var a = calculateA();
-	xEl.textContent = Math.abs(x);
-	xSignEl.textContent = Math.sign(x) === -1 ? '-' : '';
-	yEl.textContent = Math.abs(y);
-	ySignEl.textContent = Math.sign(y) === -1 ? '-' : '+';
-	zEl.textContent = Math.abs(z);
-	zSignEl.textContent = Math.sign(z) === -1 ? '-' : '+';
-	aEl.textContent = Math.abs(a);
-	aSignEl.textContent = Math.sign(x) === -1 ? '-' : '';
+	xEl.textContent = x;
+	bx1.className = bx2.className = x < 0 ? 'text-muted' : 'invisible';
+	yEl.textContent = y;
+	by1.className = by2.className = y < 0 ? 'text-muted' : 'invisible';
+	zEl.textContent = z;
+	bz1.className = bz2.className = z < 0 ? 'text-muted' : 'invisible';
+	aEl.textContent = a;
 }
 
 function addSolution(x, y, z) {
@@ -387,44 +421,54 @@ function addSolution(x, y, z) {
 	var fragment = document.createDocumentFragment();
 	var cells = [];
 	cells[0] = document.createElement('td');
-	cells[0].className = 'text-right text-muted px-2 border-right';
+	cells[0].className = 'text-right text-muted px-4 border-right';
 	cells[0].textContent = solutions.length + '.';
+	cells[0].style.width = '1%';
 	cells[1] = document.createElement('td');
-	cells[1].className = 'text-center pr-1 pl-2';
-	cells[1].textContent = Math.sign(x) === -1 ? '-' : '';
+	cells[1].className = 'text-right pr-0 pl-1';
+	var bx1 = document.createElement('span').appendChild(document.createTextNode('(')).parentNode;
+	var bx2 = document.createElement('span').appendChild(document.createTextNode(')')).parentNode;
+	bx1.className = bx2.className = x < 0 ? 'text-muted' : 'invisible';
+	cells[1].appendChild(bx1);
+	cells[1].appendChild(document.createTextNode(x));
+	cells[1].appendChild(bx2);
 	cells[2] = document.createElement('td');
-	cells[2].className = 'text-right pr-0 pl-1';
-	cells[2].textContent = Math.abs(x);
+	cells[2].className = 'text-left pr-1 pl-0';
+	cells[2].appendChild(document.createElement('sup').appendChild(document.createTextNode('3')).parentNode);
 	cells[3] = document.createElement('td');
-	cells[3].className = 'text-left pr-1 pl-0';
-	cells[3].appendChild(document.createElement('sup').appendChild(document.createTextNode('3')).parentNode);
+	cells[3].className = 'text-center px-1';
+	cells[3].textContent = '+';
 	cells[4] = document.createElement('td');
-	cells[4].className = 'text-center px-1';
-	cells[4].textContent = Math.sign(y) === -1 ? '-' : '+';
+	cells[4].className = 'text-right pr-0 pl-1';
+	var by1 = document.createElement('span').appendChild(document.createTextNode('(')).parentNode;
+	var by2 = document.createElement('span').appendChild(document.createTextNode(')')).parentNode;
+	by1.className = by2.className = y < 0 ? 'text-muted' : 'invisible';
+	cells[4].appendChild(by1);
+	cells[4].appendChild(document.createTextNode(y));
+	cells[4].appendChild(by2);
 	cells[5] = document.createElement('td');
-	cells[5].className = 'text-right pr-0 pl-1';
-	cells[5].textContent = Math.abs(y);
+	cells[5].className = 'text-left pr-1 pl-0';
+	cells[5].appendChild(document.createElement('sup').appendChild(document.createTextNode('3')).parentNode);
 	cells[6] = document.createElement('td');
-	cells[6].className = 'text-left pr-1 pl-0';
-	cells[6].appendChild(document.createElement('sup').appendChild(document.createTextNode('3')).parentNode);
+	cells[6].className = 'text-center px-1';
+	cells[6].textContent = '+';
 	cells[7] = document.createElement('td');
-	cells[7].className = 'text-center px-1';
-	cells[7].textContent = Math.sign(z) === -1 ? '-' : '+';
+	cells[7].className = 'text-right pr-0 pl-1';
+	var bz1 = document.createElement('span').appendChild(document.createTextNode('(')).parentNode;
+	var bz2 = document.createElement('span').appendChild(document.createTextNode(')')).parentNode;
+	bz1.className = bz2.className = z < 0 ? 'text-muted' : 'invisible';
+	cells[7].appendChild(bz1);
+	cells[7].appendChild(document.createTextNode(z));
+	cells[7].appendChild(bz2);
 	cells[8] = document.createElement('td');
-	cells[8].className = 'text-right pr-0 pl-1';
-	cells[8].textContent = Math.abs(z);
+	cells[8].className = 'text-left pr-1 pl-0';
+	cells[8].appendChild(document.createElement('sup').appendChild(document.createTextNode('3')).parentNode);
 	cells[9] = document.createElement('td');
-	cells[9].className = 'text-left pr-1 pl-0';
-	cells[9].appendChild(document.createElement('sup').appendChild(document.createTextNode('3')).parentNode);
-	cells[10] = document.createElement('td');
-	cells[10].className = 'text-right px-1';
-	cells[10].textContent = '=';
+	cells[9].className = 'text-right px-1';
+	cells[9].textContent = '=';
 	cells[11] = document.createElement('td');
-	cells[11].className = 'text-right px-1';
-	cells[11].textContent = Math.sign(expectedA) === -1 ? '-' : '';
-	cells[12] = document.createElement('td');
-	cells[12].className = 'text-right pr-2 pl-1';
-	cells[12].textContent = Math.abs(expectedA);
+	cells[11].className = 'text-right pr-4 pl-1';
+	cells[11].textContent = expectedA;
 	cells.forEach(function(cell) {
 		fragment.appendChild(cell);
 	});
